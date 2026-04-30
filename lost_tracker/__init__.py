@@ -1,1 +1,0 @@
-# Lost and Found Django Project Configuration
