@@ -4,22 +4,46 @@ from .models import Item
 
 @admin.register(Item)
 class ItemAdmin(admin.ModelAdmin):
-    """
-    Admin configuration for the Item model.
-    """
-    list_display = ['name', 'location', 'date_found', 'status', 'created_at']
+
+    list_display = [
+        'item_code',
+        'name',
+        'category',
+        'location',
+        'date_found',
+        'status',
+    ]
+
     list_filter = ['status', 'date_found']
-    search_fields = ['name', 'description', 'location']
+
+    search_fields = [
+        'item_code',
+        'name',
+        'description',
+        'location'
+    ]
+
     ordering = ['-created_at']
+
     readonly_fields = ['created_at', 'updated_at']
-    
+
     fieldsets = (
         (None, {
-            'fields': ('name', 'description', 'location', 'date_found')
+            'fields': (
+                'item_code',
+                'name',
+                'category',
+                'description',
+                'location',
+                'date_found',
+                'image',
+            )
         }),
+
         ('Status', {
             'fields': ('status',)
         }),
+
         ('Timestamps', {
             'fields': ('created_at', 'updated_at'),
             'classes': ('collapse',)

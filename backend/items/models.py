@@ -14,11 +14,27 @@ class Item(models.Model):
         (STATUS_PENDING, 'Pending'),
         (STATUS_COMPLETED, 'Completed'),
     ]
-    
+    item_code = models.CharField(
+    max_length=20,
+    unique=True,
+    help_text="Unique item number, e.g. LF001"
+)
     name = models.CharField(max_length=200, help_text="Name of the lost/found item")
+    category = models.CharField(
+    max_length=100,
+    blank=True,
+    help_text="Category of the item, e.g. Electronics, Wallet, Keys"
+)
     description = models.TextField(blank=True, help_text="Detailed description of the item")
     location = models.CharField(max_length=200, help_text="Location where the item was found")
     date_found = models.DateField(help_text="Date when the item was found")
+    image = models.ImageField(
+    upload_to='items/',
+    blank=True,
+    null=True,
+    help_text="Photo of the item"
+)
+
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
