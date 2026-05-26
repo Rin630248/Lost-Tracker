@@ -12,10 +12,13 @@ class ItemSerializer(serializers.ModelSerializer):
         model = Item
         fields = [
             'id',
+            'item_code',
             'name',
+            'category',
             'description',
             'location',
             'date_found',
+            'image',
             'status',
             'created_at',
             'updated_at',
