@@ -1,3 +1,4 @@
+from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from rest_framework import generics
 from rest_framework.permissions import AllowAny, IsAdminUser
@@ -11,7 +12,8 @@ from .serializers import ItemSerializer
 class ItemListView(generics.ListAPIView):
     """
     Public API: List all items.
-    Supports filtering by status (pending/completed) and search by name.
+    Supports filtering by status (pending/completed) and search by item number,
+    item code, name, category, description, or location.
     """
     serializer_class = ItemSerializer
     permission_classes = [AllowAny]
@@ -23,9 +25,20 @@ class ItemListView(generics.ListAPIView):
         if status in {Item.STATUS_PENDING, Item.STATUS_COMPLETED}:
             queryset = queryset.filter(status=status)
 
-        search = self.request.query_params.get('search') or self.request.query_params.get('name')
+        search = (self.request.query_params.get('search') or self.request.query_params.get('name') or '').strip()
         if search:
-            queryset = queryset.filter(name__icontains=search)
+            number_query = search.removeprefix('#')
+            filters = (
+                Q(item_code__icontains=search)
+                | Q(name__icontains=search)
+                | Q(category__icontains=search)
+                | Q(description__icontains=search)
+                | Q(location__icontains=search)
+            )
+            if number_query.isdigit():
+                filters |= Q(id=int(number_query))
+
+            queryset = queryset.filter(filters)
 
         return queryset
 
