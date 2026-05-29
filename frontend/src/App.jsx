@@ -2,7 +2,7 @@ import { useDeferredValue, useEffect, useState } from 'react'
 import './App.css'
 import ItemCard from './ItemCard'
 import StatsWidget from './StatsWidget'
-import AdminDashboard from './AdminDashboard' 
+import AdminDashboard from './AdminDashboard'
 const API_ENDPOINT = '/api/items/'
 
 function App() {
@@ -58,7 +58,11 @@ function App() {
 
     return () => controller.abort()
   }, [deferredSearch, filter])
+const isAdminPage = window.location.pathname === '/admin'
 
+if (isAdminPage) {
+  return <AdminDashboard />
+}
   return (
     <main className="app-shell">
       <section className="hero-panel">
@@ -106,7 +110,6 @@ function App() {
           </p>
         ) : null}
 <StatsWidget items={items} />
-<AdminDashboard /> 
         <div className="item-grid">
           {items.map((item) => (
             <ItemCard key={item.id} item={item} />
