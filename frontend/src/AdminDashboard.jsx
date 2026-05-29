@@ -3,71 +3,136 @@ function AdminDashboard() {
 
   const totalItems = items.length
   const pendingItems = items.filter((item) => item.status === 'pending').length
-  const completedItems = items.filter((item) => item.status === 'completed').length
 
   return (
-    <main className="admin-dashboard">
-      <h1>Admin Dashboard</h1>
+    <main className="admin-layout">
+      <aside className="admin-sidebar light-sidebar">
+        <div className="sidebar-title">UAC Lost &amp; Found Portal</div>
 
-      <section className="admin-stats">
-        <div className="admin-card">
-          <h3>Total Items</h3>
-          <p>{totalItems}</p>
-        </div>
+        <nav className="sidebar-nav">
+          <a className="sidebar-link active" href="/admin">Dashboard</a>
+          <a className="sidebar-link" href="#">Overview</a>
+          <a className="sidebar-link active-red" href="#">Inventory</a>
+          <a className="sidebar-link" href="#">Claims</a>
+          <a className="sidebar-link" href="#">Settings</a>
+        </nav>
 
-        <div className="admin-card">
-          <h3>Pending Items</h3>
-          <p>{pendingItems}</p>
-        </div>
+        <button className="sidebar-report-button red-button">+ Report Found Item</button>
+      </aside>
 
-        <div className="admin-card">
-          <h3>Completed Items</h3>
-          <p>{completedItems}</p>
-        </div>
-      </section>
+      <section className="admin-main stitch-admin-main">
+        <header className="admin-topbar stitch-topbar">
+          <div></div>
+          <input className="admin-search small-search" placeholder="Search records..." />
+        </header>
 
-      <section className="admin-section">
-        <h2>Register New Item</h2>
+        <section className="admin-header-row">
+          <div>
+            <h1>Lost-Tracker</h1>
+            <p>Review and manage all items logged within the university ecosystem.</p>
+          </div>
 
-        <form className="admin-form">
-          <input placeholder="Item Number / Item Code" />
-          <input placeholder="Item Name" />
-          <input placeholder="Category" />
-          <textarea placeholder="Description" />
-          <input placeholder="Location" />
-          <input type="date" />
-          <input type="file" />
-          <select defaultValue="pending">
-            <option value="pending">Pending</option>
-            <option value="completed">Completed</option>
-          </select>
-          <button type="button">Register</button>
-        </form>
-      </section>
+          <div className="compact-stats">
+            <div className="compact-stat-card">
+              <span>Total Items</span>
+              <strong>{totalItems}</strong>
+            </div>
 
-      <section className="admin-section">
-        <h2>Item Management</h2>
+            <div className="compact-stat-card">
+              <span>Unclaimed</span>
+              <strong>{pendingItems}</strong>
+            </div>
+          </div>
+        </section>
 
-        <table className="admin-table">
-          <thead>
-            <tr>
-              <th>Item Number</th>
-              <th>Image</th>
-              <th>Name</th>
-              <th>Category</th>
-              <th>Location</th>
-              <th>Found Date</th>
-              <th>Status</th>
-              <th>Action</th>
-            </tr>
-          </thead>
+        <section className="admin-two-column">
+          <div className="admin-left-column">
+            <section className="admin-section stitch-form-panel">
+              <h2>＋ Register New Item</h2>
 
-          <tbody>
-            <tr>
-              <td colSpan="8">No items registered yet.</td>
-            </tr>
-          </tbody>
-        </table>
+              <form className="stitch-admin-form">
+                <label>
+                  Item Name
+                  <input placeholder="e.g. Blue Hydroflask" />
+                </label>
+
+                <label>
+                  Category
+                  <select defaultValue="">
+                    <option value="" disabled>Select Category</option>
+                    <option>Electronics</option>
+                    <option>Keys & Wallets</option>
+                    <option>Books & Study</option>
+                    <option>Clothing</option>
+                    <option>Other</option>
+                  </select>
+                </label>
+
+                <label>
+                  Location Found
+                  <input placeholder="e.g. Science Building, Room 204" />
+                </label>
+
+                <label>
+                  Date Found
+                  <input type="date" />
+                </label>
+
+                <label>
+                  Image Upload
+                  <input type="file" />
+                </label>
+
+                <button type="button">Register Item</button>
+              </form>
+            </section>
+
+            <section className="protocol-note stitch-protocol">
+              <strong>Protocol Note</strong>
+              <p>
+                Ensure high-value items are secured immediately after registration.
+                Completed items should remain visible in the system.
+              </p>
+            </section>
+          </div>
+
+          <section className="admin-section admin-right-column">
+            <div className="table-toolbar">
+              <select>
+                <option>All Statuses</option>
+                <option>Pending</option>
+                <option>Completed</option>
+              </select>
+
+              <button>Export CSV</button>
+
+              <input placeholder="Filter by Name or ID..." />
+            </div>
+
+            <div className="table-wrapper">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>Status</th>
+                    <th>Thumbnail</th>
+                    <th>Name & Category</th>
+                    <th>Location</th>
+                    <th>Date</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  <tr>
+                    <td colSpan="6" className="empty-table">
+                      No items registered yet.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </section>
       </section>
     </main>
   )
