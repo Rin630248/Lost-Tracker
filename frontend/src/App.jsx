@@ -1,7 +1,8 @@
 import { useDeferredValue, useEffect, useState } from 'react'
 import './App.css'
 import ItemCard from './ItemCard'
-
+import StatsWidget from './StatsWidget'
+import AdminDashboard from './AdminDashboard' 
 const API_ENDPOINT = '/api/items/'
 
 function App() {
@@ -104,7 +105,8 @@ function App() {
             No items matched this search. Try a different item number, code, or keyword.
           </p>
         ) : null}
-
+<StatsWidget items={items} />
+<AdminDashboard /> 
         <div className="item-grid">
           {items.map((item) => (
             <ItemCard key={item.id} item={item} />
