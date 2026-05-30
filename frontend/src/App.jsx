@@ -5,59 +5,46 @@ import AdminDashboard from './AdminDashboard'
 
 const API_ENDPOINT = '/api/items/'
 
+
 function App() {
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('all')
   const [items, setItems] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
   const deferredSearch = useDeferredValue(search.trim())
 
   const isAdminPage = window.location.pathname === '/admin'
 
   useEffect(() => {
+     loadItems()
+}, [deferredSearch, filter, isAdminPage])
     if (isAdminPage) return
 
     const controller = new AbortController()
 
     async function loadItems() {
-      setLoading(true)
-      setError('')
+  setLoading(true)
+  setError('')
 
-      const params = new URLSearchParams()
+  const params = new URLSearchParams()
 
-      if (filter !== 'all') {
-        params.set('status', filter)
-      }
+  if (filter !== 'all') {
+    params.set('status', filter)
+  }
 
-      if (deferredSearch) {
-        params.set('search', deferredSearch)
-      }
+  if (deferredSearch) {
+    params.set('search', deferredSearch)
+  }
 
-      const requestUrl = params.toString()
-        ? `${API_ENDPOINT}?${params.toString()}`
-        : API_ENDPOINT
+  const requestUrl = params.toString()
+    ? `${API_ENDPOINT}?${params.toString()}`
+    : API_ENDPOINT
 
-      try {
-        const response = await fetch(requestUrl, { signal: controller.signal })
+  const response = await fetch(requestUrl)
+  const data = await response.json()
 
-        if (!response.ok) {
-          throw new Error(`Request failed with status ${response.status}`)
-        }
-
-        const data = await response.json()
-        setItems(Array.isArray(data) ? data : [])
-      } catch (requestError) {
-        if (requestError.name === 'AbortError') return
-
-        setError('Unable to load items right now. Please make sure the Django server is running.')
-        setItems([])
-      } finally {
-        if (!controller.signal.aborted) {
-          setLoading(false)
-        }
-      }
-    }
+  setItems(data.results || data || [])
+  setLoading(false)
+}
 
     loadItems()
 
@@ -152,10 +139,15 @@ function App() {
         ) : null}
 
         <div className="item-grid stitch-grid">
-          {items.map((item) => (
-            <ItemCard key={item.id} item={item} />
-          ))}
-        </div>
+  {items.map((item) => (
+  <ItemCard
+  key={item.id}
+  item={item}
+  onComplete={markComplete}
+  isAdmin={true}
+/>
+))}
+</div>
 
         <div className="pagination">
           <button>‹</button>

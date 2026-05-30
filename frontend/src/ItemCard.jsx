@@ -18,7 +18,7 @@ function formatDate(dateValue) {
   }).format(new Date(dateValue))
 }
 
-function ItemCard({ item }) {
+function ItemCard({ item, onComplete }) {
   const isCompleted = item.status === 'completed'
 
   return (
@@ -41,12 +41,20 @@ function ItemCard({ item }) {
 
         <div className="item-card__meta">
           <span>Code: {item.item_code}</span>
-          <span>{item.category || 'Uncategorized'}</span>
+          <span>Category: {item.category || 'Uncategorized'}</span>
           <span>Found: {formatDate(item.date_found)}</span>
         </div>
 
         <p className="item-card__location">Location: {item.location}</p>
         <p className="item-card__description">{item.description || 'No extra description provided yet.'}</p>
+        {item.status !== 'completed' && (
+  <button type="button" onClick={() => {
+  console.log('clicked', item.id)
+  onComplete(item.id)
+}}>
+  Mark Completed
+</button>
+)}
       </div>
     </article>
   )
