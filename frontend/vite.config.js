@@ -8,11 +8,15 @@ export default defineConfig({
     proxy: {
       '/api': {
         target: 'http://127.0.0.1:8001',
-        changeOrigin: true,
+      },
+      '/django-admin': {
+        target: 'http://127.0.0.1:8001',
       },
       '/media': {
         target: 'http://127.0.0.1:8001',
-        changeOrigin: true,
+      },
+      '/static': {
+        target: 'http://127.0.0.1:8001',
       },
     },
   },

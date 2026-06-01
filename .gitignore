@@ -1,0 +1,10 @@
+.DS_Store
+.venv/
+.local-tools/
+.vscode/
+backup-before-integration-fix.patch
+backend/dev4_verify_settings.py
+backend/venv/
+__pycache__/
+*.pyc
+*.pyo

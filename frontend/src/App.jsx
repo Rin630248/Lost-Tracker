@@ -1,55 +1,97 @@
-import { useDeferredValue, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import './App.css'
 import ItemCard from './ItemCard'
 import AdminDashboard from './AdminDashboard'
 
-const API_ENDPOINT = '/api/items/'
+const PUBLIC_ITEMS_ENDPOINT = '/api/items/'
 
-
-function App() {
-  const [search, setSearch] = useState('')
-  const [filter, setFilter] = useState('all')
-  const [items, setItems] = useState([])
-  const deferredSearch = useDeferredValue(search.trim())
-
-  const isAdminPage = window.location.pathname === '/admin'
-
-  useEffect(() => {
-     loadItems()
-}, [deferredSearch, filter, isAdminPage])
-    if (isAdminPage) return
-
-    const controller = new AbortController()
-
-    async function loadItems() {
-  setLoading(true)
-  setError('')
-
-  const params = new URLSearchParams()
-
-  if (filter !== 'all') {
-    params.set('status', filter)
+function normalizeItemsResponse(payload) {
+  if (Array.isArray(payload)) {
+    return payload
   }
 
-  if (deferredSearch) {
-    params.set('search', deferredSearch)
+  if (Array.isArray(payload?.results)) {
+    return payload.results
   }
 
-  const requestUrl = params.toString()
-    ? `${API_ENDPOINT}?${params.toString()}`
-    : API_ENDPOINT
-
-  const response = await fetch(requestUrl)
-  const data = await response.json()
-
-  setItems(data.results || data || [])
-  setLoading(false)
+  return []
 }
 
-    loadItems()
+function App() {
+  const [items, setItems] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState('all')
+
+  const isAdminPage =
+    window.location.pathname === '/admin' || window.location.pathname === '/admin/'
+
+  useEffect(() => {
+    if (isAdminPage) {
+      return undefined
+    }
+
+    const controller = new AbortController()
+    const normalizedSearch = search.trim()
+    const normalizedStatus = statusFilter
+
+    ;(async () => {
+      const params = new URLSearchParams()
+
+      if (normalizedStatus !== 'all') {
+        params.set('status', normalizedStatus)
+      }
+
+      if (normalizedSearch) {
+        params.set('search', normalizedSearch)
+      }
+
+      const requestUrl = params.toString()
+        ? `${PUBLIC_ITEMS_ENDPOINT}?${params.toString()}`
+        : PUBLIC_ITEMS_ENDPOINT
+
+      try {
+        const response = await fetch(requestUrl, { signal: controller.signal })
+
+        if (!response.ok) {
+          throw new Error(`Request failed with status ${response.status}`)
+        }
+
+        const payload = await response.json()
+        setItems(normalizeItemsResponse(payload))
+      } catch (requestError) {
+        if (requestError.name === 'AbortError') {
+          return
+        }
+
+        setItems([])
+        setError('Unable to load items right now. Please try again.')
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false)
+        }
+      }
+    })()
 
     return () => controller.abort()
-  }, [deferredSearch, filter, isAdminPage])
+  }, [search, statusFilter, isAdminPage])
+
+  function handleSearchSubmit(event) {
+    event.preventDefault()
+  }
+
+  function handleSearchChange(event) {
+    setLoading(true)
+    setError('')
+    setSearch(event.target.value)
+  }
+
+  function handleStatusFilterChange(nextStatus) {
+    setLoading(true)
+    setError('')
+    setStatusFilter(nextStatus)
+  }
 
   if (isAdminPage) {
     return <AdminDashboard />
@@ -61,14 +103,17 @@ function App() {
         <div className="nav-brand">CAMPUS RECOVERY PORTAL</div>
 
         <nav className="nav-links">
-  <a className="nav-link active" href="/">
-    Browse Items
-  </a>
-</nav>
+          <a className="nav-link active" href="/">
+            Browse Items
+          </a>
+          <a className="nav-link" href="/admin">
+            Admin Dashboard
+          </a>
+        </nav>
 
-        <div className="nav-icons">
-          <span>🔔</span>
-          <span>◎</span>
+        <div className="nav-icons" aria-hidden="true">
+          <span>?</span>
+          <span>+</span>
         </div>
       </header>
 
@@ -76,52 +121,60 @@ function App() {
         <h1>Lost something on campus?</h1>
         <p>Search our official registry of found items to reclaim your property.</p>
 
-        <div className="stitch-search-row">
-          <select className="category-select">
-            <option>All Categories</option>
-            <option>Electronics</option>
-            <option>Keys & Wallets</option>
-            <option>Books & Study</option>
-            <option>Clothing</option>
+        <form className="stitch-search-row" onSubmit={handleSearchSubmit}>
+          <select
+            className="category-select"
+            defaultValue="all"
+            disabled
+            title="Category filtering is not connected yet."
+          >
+            <option value="all">All Categories</option>
+            <option value="electronics">Electronics</option>
+            <option value="keys-wallets">Keys &amp; Wallets</option>
+            <option value="books-study">Books &amp; Study</option>
+            <option value="clothing">Clothing</option>
           </select>
 
           <input
             type="text"
-            placeholder="Search by item name, color, or location..."
+            placeholder="Search by item number, code, name, or location..."
             value={search}
-            onChange={(event) => setSearch(event.target.value)}
+            onChange={handleSearchChange}
           />
 
-          <button type="button" className="search-button">
+          <button type="submit" className="search-button">
             SEARCH
           </button>
-        </div>
+        </form>
       </section>
 
       <section className="browse-content">
         <div className="status-tabs">
           <button
-            className={filter === 'all' ? 'tab active' : 'tab'}
-            onClick={() => setFilter('all')}
+            type="button"
+            className={statusFilter === 'all' ? 'tab active' : 'tab'}
+            onClick={() => handleStatusFilterChange('all')}
           >
             All Items <span>{items.length}</span>
           </button>
 
           <button
-            className={filter === 'pending' ? 'tab active' : 'tab'}
-            onClick={() => setFilter('pending')}
+            type="button"
+            className={statusFilter === 'pending' ? 'tab active' : 'tab'}
+            onClick={() => handleStatusFilterChange('pending')}
           >
             Pending
           </button>
 
           <button
-            className={filter === 'completed' ? 'tab active' : 'tab'}
-            onClick={() => setFilter('completed')}
+            type="button"
+            className={statusFilter === 'completed' ? 'tab active' : 'tab'}
+            onClick={() => handleStatusFilterChange('completed')}
           >
             Completed
           </button>
 
-          <button className="advanced-filter" type="button">
+          <button className="advanced-filter" type="button" disabled>
             Advanced Filters
           </button>
         </div>
@@ -133,34 +186,31 @@ function App() {
         ) : null}
 
         {!error && !loading && items.length === 0 ? (
-          <p className="state-message">
-            No items matched this search. Try a different item number, code, or keyword.
-          </p>
+          <p className="state-message">No items found.</p>
         ) : null}
 
         <div className="item-grid stitch-grid">
-  {items.map((item) => (
-  <ItemCard
-  key={item.id}
-  item={item}
-  onComplete={markComplete}
-  isAdmin={true}
-/>
-))}
-</div>
-
-        <div className="pagination">
-          <button>‹</button>
-          <button className="active">1</button>
-          <button>2</button>
-          <button>3</button>
-          <span>...</span>
-          <button>›</button>
+          {items.map((item) => (
+            <ItemCard key={item.id} item={item} />
+          ))}
         </div>
+
+        {!loading && items.length > 0 ? (
+          <div className="pagination" aria-label="Pagination">
+            <button type="button" disabled>
+              {'<'}
+            </button>
+            <button type="button" className="active">
+              1
+            </button>
+            <button type="button" disabled>
+              {'>'}
+            </button>
+          </div>
+        ) : null}
       </section>
     </main>
   )
 }
 
 export default App
-
