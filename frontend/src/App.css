@@ -122,6 +122,18 @@ body {
   background: var(--dark-red);
 }
 
+.search-button:disabled,
+.tab:disabled,
+.advanced-filter:disabled,
+.sidebar-report-button:disabled,
+.stitch-admin-form button:disabled,
+.table-toolbar button:disabled,
+.admin-action-button:disabled,
+.item-card__action:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 .browse-content {
   max-width: 1180px;
   margin: 0 auto;
@@ -250,6 +262,17 @@ body {
   line-height: 1.5;
 }
 
+.item-card__action {
+  margin-top: 12px;
+  border: none;
+  border-radius: 10px;
+  background: var(--red);
+  color: white;
+  cursor: pointer;
+  font-weight: 800;
+  padding: 12px 14px;
+}
+
 .pagination {
   margin-top: 34px;
   display: flex;
@@ -365,6 +388,10 @@ body {
   background: white;
   color: var(--red);
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
 }
 
 .admin-main {
@@ -526,6 +553,11 @@ body {
 .protocol-note p {
   margin: 8px 0 0;
   color: #6a2f37;
+}
+
+.protocol-note a {
+  color: inherit;
+  font-weight: 800;
 }
 
 .table-wrapper {
@@ -725,11 +757,23 @@ body {
 }
 
 .stitch-admin-form input,
-.stitch-admin-form select {
+.stitch-admin-form select,
+.stitch-admin-form textarea {
   height: 42px;
   border: 1px solid #f0cfcf;
   padding: 0 12px;
   font-size: 13px;
+}
+
+.stitch-admin-form textarea {
+  height: auto;
+  min-height: 110px;
+  padding: 12px;
+  resize: vertical;
+}
+
+.stitch-admin-form__description {
+  grid-column: 1 / -1;
 }
 
 .stitch-admin-form button {
@@ -776,6 +820,60 @@ body {
 .admin-table th,
 .admin-table td {
   padding: 18px 14px;
+}
+
+.admin-status-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 90px;
+  border-radius: 999px;
+  background: var(--light-red);
+  color: var(--dark-red);
+  font-size: 12px;
+  font-weight: 800;
+  padding: 7px 12px;
+  text-transform: capitalize;
+}
+
+.admin-status-chip--completed {
+  background: #e7f6ec;
+  color: #21693b;
+}
+
+.admin-thumbnail {
+  width: 68px;
+  height: 68px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid #f0cfcf;
+  background: #f8fafc;
+}
+
+.admin-thumbnail--placeholder {
+  display: grid;
+  place-items: center;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.admin-row-meta {
+  margin-top: 6px;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.admin-action-button {
+  min-width: 132px;
+  height: 36px;
+  border: none;
+  background: #b3001b;
+  color: white;
+  cursor: pointer;
+  font-weight: 800;
+  padding: 0 12px;
 }
 
 @media (max-width: 1000px) {
