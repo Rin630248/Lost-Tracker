@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import './App.css'
 import ItemCard from './ItemCard'
 import AdminDashboard from './AdminDashboard'
+import { subscribeToItemChanges } from './itemSync'
 
 const PUBLIC_ITEMS_ENDPOINT = '/api/items/'
 
@@ -23,9 +24,22 @@ function App() {
   const [error, setError] = useState('')
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
+  const [refreshVersion, setRefreshVersion] = useState(0)
 
   const isAdminPage =
     window.location.pathname === '/admin' || window.location.pathname === '/admin/'
+
+  useEffect(() => {
+    if (isAdminPage) {
+      return undefined
+    }
+
+    return subscribeToItemChanges(() => {
+      setError('')
+      setLoading(true)
+      setRefreshVersion((currentVersion) => currentVersion + 1)
+    })
+  }, [isAdminPage])
 
   useEffect(() => {
     if (isAdminPage) {
@@ -52,7 +66,10 @@ function App() {
         : PUBLIC_ITEMS_ENDPOINT
 
       try {
-        const response = await fetch(requestUrl, { signal: controller.signal })
+        const response = await fetch(requestUrl, {
+          signal: controller.signal,
+          cache: 'no-store',
+        })
 
         if (!response.ok) {
           throw new Error(`Request failed with status ${response.status}`)
@@ -75,7 +92,7 @@ function App() {
     })()
 
     return () => controller.abort()
-  }, [search, statusFilter, isAdminPage])
+  }, [search, statusFilter, isAdminPage, refreshVersion])
 
   function handleSearchSubmit(event) {
     event.preventDefault()
