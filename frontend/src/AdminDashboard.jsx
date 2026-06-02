@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { notifyItemsChanged } from './itemSync'
 
 const PUBLIC_ITEMS_ENDPOINT = '/api/items/'
 const ADMIN_ITEMS_ENDPOINT = '/api/admin/items/'
@@ -134,6 +135,16 @@ function matchesSearch(item, searchTerm) {
   return fields.some((value) => String(value ?? '').toLowerCase().includes(normalizedTerm))
 }
 
+function mergeItemIntoList(items, nextItem) {
+  const existingIndex = items.findIndex((item) => item.id === nextItem.id)
+
+  if (existingIndex === -1) {
+    return [nextItem, ...items]
+  }
+
+  return items.map((item) => (item.id === nextItem.id ? nextItem : item))
+}
+
 function AdminDashboard() {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
@@ -143,8 +154,8 @@ function AdminDashboard() {
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
   const [submitSuccess, setSubmitSuccess] = useState('')
-  const [completingItemId, setCompletingItemId] = useState(null)
-  const [completeError, setCompleteError] = useState('')
+  const [statusUpdatingItemId, setStatusUpdatingItemId] = useState(null)
+  const [statusUpdateError, setStatusUpdateError] = useState('')
   const [formState, setFormState] = useState({
     item_code: '',
     name: '',
@@ -162,7 +173,10 @@ function AdminDashboard() {
     }
 
     try {
-      const response = await fetch(PUBLIC_ITEMS_ENDPOINT, { signal })
+      const response = await fetch(PUBLIC_ITEMS_ENDPOINT, {
+        signal,
+        cache: 'no-store',
+      })
 
       if (!response.ok) {
         throw new Error(`Request failed with status ${response.status}`)
@@ -243,6 +257,8 @@ function AdminDashboard() {
         throw new Error(await getApiErrorMessage(response, 'Unable to register the item right now.'))
       }
 
+      const createdItem = await response.json()
+
       setFormState({
         item_code: '',
         name: '',
@@ -253,7 +269,8 @@ function AdminDashboard() {
       })
       setImageFile(null)
       setSubmitSuccess('Item registered successfully.')
-      await loadItems()
+      setItems((currentItems) => mergeItemIntoList(currentItems, createdItem))
+      notifyItemsChanged()
     } catch (requestError) {
       setSubmitError(requestError.message || 'Unable to register the item right now.')
     } finally {
@@ -261,16 +278,24 @@ function AdminDashboard() {
     }
   }
 
-  async function handleComplete(itemId) {
-    setCompletingItemId(itemId)
-    setCompleteError('')
+  async function handleStatusToggle(item) {
+    const nextStatus = item.status === 'completed' ? 'pending' : 'completed'
+
+    setStatusUpdatingItemId(item.id)
+    setStatusUpdateError('')
     setSubmitSuccess('')
 
     try {
-      const response = await fetch(`${ADMIN_ITEMS_ENDPOINT}${itemId}/complete/`, {
+      const response = await fetch(`${ADMIN_ITEMS_ENDPOINT}${item.id}/`, {
         method: 'PATCH',
         credentials: 'same-origin',
-        headers: getCsrfHeaders(),
+        headers: {
+          ...getCsrfHeaders(),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          status: nextStatus,
+        }),
       })
 
       if (response.status === 403) {
@@ -278,14 +303,22 @@ function AdminDashboard() {
       }
 
       if (!response.ok) {
-        throw new Error(await getApiErrorMessage(response, 'Unable to mark the item as completed.'))
+        throw new Error(await getApiErrorMessage(response, 'Unable to update the item status.'))
       }
 
-      await loadItems()
+      const updatedItem = await response.json()
+
+      setItems((currentItems) => mergeItemIntoList(currentItems, updatedItem))
+      setSubmitSuccess(
+        nextStatus === 'completed'
+          ? 'Item marked as completed.'
+          : 'Item moved back to pending.'
+      )
+      notifyItemsChanged()
     } catch (requestError) {
-      setCompleteError(requestError.message || 'Unable to mark the item as completed.')
+      setStatusUpdateError(requestError.message || 'Unable to update the item status.')
     } finally {
-      setCompletingItemId(null)
+      setStatusUpdatingItemId(null)
     }
   }
 
@@ -446,7 +479,7 @@ function AdminDashboard() {
             <section className="protocol-note stitch-protocol">
               <strong>Admin Access</strong>
               <p>
-                Creating items and marking them completed uses Django admin permissions. Sign in at{' '}
+                Creating items and changing item status uses Django admin permissions. Sign in at{' '}
                 <a href={DJANGO_ADMIN_LOGIN_PATH}>/django-admin/login/</a> before using admin actions.
               </p>
             </section>
@@ -454,7 +487,7 @@ function AdminDashboard() {
 
           <section className="admin-section admin-right-column" id="inventory-table">
             {error ? <p className="state-message state-message--error">{error}</p> : null}
-            {completeError ? <p className="state-message state-message--error">{completeError}</p> : null}
+            {statusUpdateError ? <p className="state-message state-message--error">{statusUpdateError}</p> : null}
 
             <div className="table-toolbar">
               <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
@@ -544,13 +577,13 @@ function AdminDashboard() {
                               <button
                                 type="button"
                                 className="admin-action-button"
-                                disabled={isCompleted || completingItemId === item.id}
-                                onClick={() => handleComplete(item.id)}
+                                disabled={statusUpdatingItemId === item.id}
+                                onClick={() => handleStatusToggle(item)}
                               >
-                                {isCompleted
-                                  ? 'Completed'
-                                  : completingItemId === item.id
-                                    ? 'Updating...'
+                                {statusUpdatingItemId === item.id
+                                  ? 'Updating...'
+                                  : isCompleted
+                                    ? 'Mark Pending'
                                     : 'Mark Completed'}
                               </button>
                             </td>
