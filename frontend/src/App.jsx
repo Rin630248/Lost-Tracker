@@ -154,7 +154,7 @@ function App() {
 
           <input
             type="text"
-            placeholder="Search by item number, code, name, or location..."
+            placeholder="Search by Item No., Name, Category, or Location..."
             value={search}
             onChange={handleSearchChange}
           />

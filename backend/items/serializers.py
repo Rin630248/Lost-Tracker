@@ -15,7 +15,6 @@ class ItemSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'item_number',
-            'item_code',
             'name',
             'category',
             'description',

@@ -15,11 +15,6 @@ class Item(models.Model):
         (STATUS_COMPLETED, 'Completed'),
     ]
 
-    item_code = models.CharField(
-        max_length=20,
-        unique=True,
-        help_text="Unique item number, e.g. LF001",
-    )
     name = models.CharField(max_length=200, help_text="Name of the lost/found item")
     category = models.CharField(
         max_length=100,

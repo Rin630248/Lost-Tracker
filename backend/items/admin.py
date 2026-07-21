@@ -6,12 +6,11 @@ from .models import Item
 @admin.register(Item)
 class ItemAdmin(admin.ModelAdmin):
     list_display = [
-        'item_code',
+        'item_number_display',
         'name',
         'category',
         'location',
         'date_found',
-        'item_number_display',
         'status',
     ]
 
@@ -19,7 +18,6 @@ class ItemAdmin(admin.ModelAdmin):
 
     search_fields = [
         '=id',
-        'item_code',
         'name',
         'category',
         'description',
@@ -28,13 +26,16 @@ class ItemAdmin(admin.ModelAdmin):
 
     ordering = ['-created_at']
 
-    readonly_fields = ['item_number_display', 'created_at', 'updated_at']
+    readonly_fields = [
+        'item_number_display',
+        'created_at',
+        'updated_at',
+    ]
 
     fieldsets = (
         (None, {
             'fields': (
                 'item_number_display',
-                'item_code',
                 'name',
                 'category',
                 'description',

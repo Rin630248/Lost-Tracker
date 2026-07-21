@@ -13,7 +13,6 @@ from .serializers import ItemSerializer
 class ItemNumberTests(TestCase):
     def create_item(self, **overrides):
         defaults = {
-            'item_code': f"LF{Item.objects.count() + 1:03d}",
             'name': 'Wallet',
             'category': 'Accessories',
             'description': 'Black leather wallet',
@@ -38,65 +37,87 @@ class ItemNumberTests(TestCase):
         self.assertEqual(data['item_number'], item.id)
 
     def test_public_search_finds_item_by_item_number(self):
-        first_item = self.create_item(name='Wallet', item_code='LF001')
+        first_item = self.create_item(name='Wallet')
         self.create_item(
             name='Umbrella',
-            item_code='LF002',
             category='Rain Gear',
             description='Blue umbrella',
             location='Student Center',
         )
 
-        response = self.client.get(reverse('items:item-list'), {'search': str(first_item.item_number)})
+        response = self.client.get(
+            reverse('items:item-list'),
+            {'search': str(first_item.item_number)},
+        )
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual([entry['item_number'] for entry in response.json()], [first_item.item_number])
+        self.assertEqual(
+            [entry['item_number'] for entry in response.json()],
+            [first_item.item_number],
+        )
 
     def test_public_search_finds_text_fields(self):
         item = self.create_item(
-            item_code='LF001',
             name='Laptop Sleeve',
             category='Electronics',
             description='Blue protective sleeve',
         )
 
-        category_response = self.client.get(reverse('items:item-list'), {'search': 'Electronics'})
-        description_response = self.client.get(reverse('items:item-list'), {'search': 'protective'})
+        category_response = self.client.get(
+            reverse('items:item-list'),
+            {'search': 'Electronics'},
+        )
+        description_response = self.client.get(
+            reverse('items:item-list'),
+            {'search': 'protective'},
+        )
 
         self.assertEqual(category_response.status_code, 200)
         self.assertEqual(description_response.status_code, 200)
-        self.assertEqual([entry['id'] for entry in category_response.json()], [item.id])
-        self.assertEqual([entry['id'] for entry in description_response.json()], [item.id])
+        self.assertEqual(
+            [entry['id'] for entry in category_response.json()],
+            [item.id],
+        )
+        self.assertEqual(
+            [entry['id'] for entry in description_response.json()],
+            [item.id],
+        )
 
     def test_public_status_filter_returns_only_matching_items(self):
         completed_item = self.create_item(
-            item_code='LF001',
             name='Umbrella',
             status=Item.STATUS_COMPLETED,
         )
         self.create_item(
-            item_code='LF002',
             name='Wallet',
             status=Item.STATUS_PENDING,
         )
 
-        response = self.client.get(reverse('items:item-list'), {'status': Item.STATUS_COMPLETED})
+        response = self.client.get(
+            reverse('items:item-list'),
+            {'status': Item.STATUS_COMPLETED},
+        )
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual([entry['id'] for entry in response.json()], [completed_item.id])
+        self.assertEqual(
+            [entry['id'] for entry in response.json()],
+            [completed_item.id],
+        )
 
     def test_admin_configuration_exposes_item_number(self):
         admin = ItemAdmin(Item, AdminSite())
 
         self.assertIn('item_number_display', admin.list_display)
-        self.assertLess(admin.list_display.index('item_number_display'), admin.list_display.index('status'))
+        self.assertLess(
+            admin.list_display.index('item_number_display'),
+            admin.list_display.index('status'),
+        )
         self.assertIn('=id', admin.search_fields)
 
 
 class AdminItemStatusUpdateTests(TestCase):
     def setUp(self):
         self.item = Item.objects.create(
-            item_code='LF001',
             name='Phone',
             category='Electronics',
             description='Black smartphone',
@@ -144,7 +165,10 @@ class AdminItemStatusUpdateTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()['status'], Item.STATUS_PENDING)
         self.assertEqual(self.item.status, Item.STATUS_PENDING)
-        self.assertEqual([entry['id'] for entry in public_response.json()], [self.item.id])
+        self.assertEqual(
+            [entry['id'] for entry in public_response.json()],
+            [self.item.id],
+        )
 
     def test_unauthenticated_admin_patch_is_forbidden(self):
         self.client.logout()

@@ -29,8 +29,8 @@ class ItemListView(generics.ListAPIView):
         if search:
             number_query = search.removeprefix('#')
             filters = (
-                Q(item_code__icontains=search)
-                | Q(name__icontains=search)
+              
+                Q(name__icontains=search)
                 | Q(category__icontains=search)
                 | Q(description__icontains=search)
                 | Q(location__icontains=search)

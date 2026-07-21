@@ -117,22 +117,21 @@ async function getApiErrorMessage(response, fallbackMessage) {
 }
 
 function matchesSearch(item, searchTerm) {
-  if (!searchTerm) {
-    return true
-  }
+ if (!searchTerm) {
+  return true
+}
 
-  const normalizedTerm = searchTerm.toLowerCase()
-  const fields = [
-    item.id,
-    item.item_number,
-    item.item_code,
-    item.name,
-    item.category,
-    item.description,
-    item.location,
-  ]
+const normalizedTerm = searchTerm.toLowerCase()
+const fields = [
+  item.id,
+  item.item_number,
+  item.name,
+  item.category,
+  item.description,
+  item.location,
+]
 
-  return fields.some((value) => String(value ?? '').toLowerCase().includes(normalizedTerm))
+return fields.some((value) => String(value ?? '').toLowerCase().includes(normalizedTerm))
 }
 
 function mergeItemIntoList(items, nextItem) {
@@ -157,7 +156,6 @@ function AdminDashboard() {
   const [statusUpdatingItemId, setStatusUpdatingItemId] = useState(null)
   const [statusUpdateError, setStatusUpdateError] = useState('')
   const [formState, setFormState] = useState({
-    item_code: '',
     name: '',
     category: '',
     description: '',
@@ -250,36 +248,35 @@ function AdminDashboard() {
       })
 
       if (response.status === 403) {
-        throw new Error(AUTH_REQUIRED_MESSAGE)
-      }
+  throw new Error(AUTH_REQUIRED_MESSAGE)
+}
 
-      if (!response.ok) {
-        throw new Error(await getApiErrorMessage(response, 'Unable to register the item right now.'))
-      }
+if (!response.ok) {
+  throw new Error(await getApiErrorMessage(response, 'Unable to register the item right now.'))
+}
 
-      const createdItem = await response.json()
+const createdItem = await response.json()
 
-      setFormState({
-        item_code: '',
-        name: '',
-        category: '',
-        description: '',
-        location: '',
-        date_found: '',
-      })
-      setImageFile(null)
-      setSubmitSuccess('Item registered successfully.')
-      setItems((currentItems) => mergeItemIntoList(currentItems, createdItem))
-      notifyItemsChanged()
-    } catch (requestError) {
-      setSubmitError(requestError.message || 'Unable to register the item right now.')
-    } finally {
-      setSubmitting(false)
-    }
-  }
+setFormState({
+  name: '',
+  category: '',
+  description: '',
+  location: '',
+  date_found: '',
+})
+setImageFile(null)
+setSubmitSuccess('Item registered successfully.')
+setItems((currentItems) => mergeItemIntoList(currentItems, createdItem))
+notifyItemsChanged()
+} catch (requestError) {
+setSubmitError(requestError.message || 'Unable to register the item right now.')
+} finally {
+setSubmitting(false)
+}
+}
 
-  async function handleStatusToggle(item) {
-    const nextStatus = item.status === 'completed' ? 'pending' : 'completed'
+async function handleStatusToggle(item) {
+const nextStatus = item.status === 'completed' ? 'pending' : 'completed'
 
     setStatusUpdatingItemId(item.id)
     setStatusUpdateError('')
@@ -391,30 +388,19 @@ function AdminDashboard() {
               <h2>Register New Item</h2>
 
               {submitError ? <p className="state-message state-message--error">{submitError}</p> : null}
-              {submitSuccess ? <p className="state-message">{submitSuccess}</p> : null}
+{submitSuccess ? <p className="state-message">{submitSuccess}</p> : null}
 
-              <form className="stitch-admin-form" onSubmit={handleSubmit}>
-                <label>
-                  Item Code
-                  <input
-                    name="item_code"
-                    placeholder="e.g. LF002"
-                    value={formState.item_code}
-                    onChange={handleFieldChange}
-                    required
-                  />
-                </label>
-
-                <label>
-                  Item Name
-                  <input
-                    name="name"
-                    placeholder="e.g. Blue Hydroflask"
-                    value={formState.name}
-                    onChange={handleFieldChange}
-                    required
-                  />
-                </label>
+<form className="stitch-admin-form" onSubmit={handleSubmit}>
+  <label>
+    Item Name
+    <input
+      name="name"
+      placeholder="e.g. Blue Hydroflask"
+      value={formState.name}
+      onChange={handleFieldChange}
+      required
+    />
+  </label>
 
                 <label>
                   Category
@@ -501,7 +487,7 @@ function AdminDashboard() {
               </button>
 
               <input
-                placeholder="Filter by Name, Code, or ID..."
+               placeholder="Filter by Item No., Name, Category, or Location..."
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
               />
@@ -567,7 +553,7 @@ function AdminDashboard() {
                             <td>
                               <strong>{item.name || 'Unnamed item'}</strong>
                               <div className="admin-row-meta">
-                                #{item.item_number ?? item.id} | {item.item_code || 'Unassigned'} |{' '}
+                               #{item.item_number ?? item.id}
                                 {item.category || 'Uncategorized'}
                               </div>
                             </td>
