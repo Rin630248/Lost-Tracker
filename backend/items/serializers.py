@@ -22,6 +22,9 @@ class ItemSerializer(serializers.ModelSerializer):
             'date_found',
             'image',
             'status',
+            'unid',
+            'claimed_date',
+            'admin_note',
             'created_at',
             'updated_at',
         ]

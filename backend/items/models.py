@@ -37,6 +37,22 @@ class Item(models.Model):
         default=STATUS_PENDING,
         help_text="Current status of the item",
     )
+    unid = models.CharField(
+    max_length=100,
+    blank=True,
+    default='',
+    help_text="UNID of the person who claimed the item",
+)
+    claimed_date = models.DateField(
+        blank=True,
+        null=True,
+        help_text="Date when the item was claimed",
+    )
+    admin_note = models.TextField(
+        blank=True,
+        default='',
+        help_text="Internal note for administrators",
+    )
     created_at = models.DateTimeField(auto_now_add=True, help_text="Timestamp when the item was created")
     updated_at = models.DateTimeField(auto_now=True, help_text="Timestamp when the item was last updated")
 

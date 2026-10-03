@@ -277,7 +277,27 @@ setSubmitting(false)
 
 async function handleStatusToggle(item) {
 const nextStatus = item.status === 'completed' ? 'pending' : 'completed'
+    let claimDetails = {}
 
+    if (nextStatus === 'completed') {
+      const unid = window.prompt('Enter claimant UNID:', item.unid || '')
+      if (unid === null) return
+
+      const claimedDate = window.prompt(
+        'Enter claimed date (YYYY-MM-DD):',
+        item.claimed_date || ''
+      )
+      if (claimedDate === null) return
+
+      const adminNote = window.prompt('Enter admin note:', item.admin_note || '')
+      if (adminNote === null) return
+
+      claimDetails = {
+        unid: unid.trim(),
+        claimed_date: claimedDate.trim() || null,
+        admin_note: adminNote.trim(),
+      }
+    }
     setStatusUpdatingItemId(item.id)
     setStatusUpdateError('')
     setSubmitSuccess('')
@@ -292,6 +312,7 @@ const nextStatus = item.status === 'completed' ? 'pending' : 'completed'
         },
         body: JSON.stringify({
           status: nextStatus,
+          ...claimDetails,
         }),
       })
 
@@ -332,19 +353,15 @@ const nextStatus = item.status === 'completed' ? 'pending' : 'completed'
             Browse Items
           </a>
           <a className="sidebar-link active-red" href="#inventory-table">
-            Inventory
+            Register Item
           </a>
           <a className="sidebar-link" href={DJANGO_ADMIN_LOGIN_PATH}>
             Admin Login
           </a>
-          <a className="sidebar-link" href="#register-item-form">
-            Register Item
-          </a>
+          
         </nav>
 
-        <a className="sidebar-report-button red-button" href="#register-item-form">
-          + Report Found Item
-        </a>
+        
       </aside>
 
       <section className="admin-main stitch-admin-main">

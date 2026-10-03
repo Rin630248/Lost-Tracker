@@ -183,3 +183,23 @@ class AdminItemStatusUpdateTests(TestCase):
 
         self.assertEqual(response.status_code, 403)
         self.assertEqual(self.item.status, Item.STATUS_PENDING)
+    def test_admin_patch_can_save_claim_details(self):
+        response = self.client.patch(
+            reverse('items:admin-item-update', args=[self.item.pk]),
+            data={
+                'status': Item.STATUS_COMPLETED,
+                'unid': 'test-unid',
+                'claimed_date': '2026-10-04',
+                'admin_note': 'test-note',
+            },
+            content_type='application/json',
+        )
+
+        self.item.refresh_from_db()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(self.item.status, Item.STATUS_COMPLETED)
+        self.assertEqual(self.item.unid, 'test-unid')
+        self.assertEqual(self.item.claimed_date, date(2026, 10, 4))
+        self.assertEqual(self.item.admin_note, 'test-note')
+
