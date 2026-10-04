@@ -65,14 +65,14 @@ class AdminItemCreateView(generics.CreateAPIView):
         serializer.save(status=Item.STATUS_PENDING)
 
 
-class AdminItemUpdateView(generics.UpdateAPIView):
+class AdminItemUpdateView(generics.RetrieveUpdateDestroyAPIView):
     """
     Admin API: Update an existing item (PATCH).
     """
     queryset = Item.objects.all()
     serializer_class = ItemSerializer
     permission_classes = [IsAdminUser]
-    http_method_names = ['patch']
+    http_method_names = ['patch', 'delete']
 
 
 class AdminItemCompleteView(APIView):

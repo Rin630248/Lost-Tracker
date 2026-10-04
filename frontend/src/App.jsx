@@ -24,6 +24,8 @@ function App() {
   const [error, setError] = useState('')
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
+  const [selectedCategory, setSelectedCategory] = useState('all')
+  const [appliedCategory, setAppliedCategory] = useState('all')
   const [refreshVersion, setRefreshVersion] = useState(0)
 
   const isAdminPage =
@@ -96,6 +98,7 @@ function App() {
 
   function handleSearchSubmit(event) {
     event.preventDefault()
+    setAppliedCategory(selectedCategory)
   }
 
   function handleSearchChange(event) {
@@ -110,6 +113,10 @@ function App() {
     setStatusFilter(nextStatus)
   }
 
+  const visibleItems = appliedCategory === 'all'
+    ? items
+    : items.filter((item) => item.category === appliedCategory)
+
   if (isAdminPage) {
     return <AdminDashboard />
   }
@@ -122,9 +129,6 @@ function App() {
         <nav className="nav-links">
           <a className="nav-link active" href="/">
             Browse Items
-          </a>
-          <a className="nav-link" href="/admin">
-            Admin Dashboard
           </a>
         </nav>
 
@@ -141,15 +145,15 @@ function App() {
         <form className="stitch-search-row" onSubmit={handleSearchSubmit}>
           <select
             className="category-select"
-            defaultValue="all"
-            disabled
-            title="Category filtering is not connected yet."
+            value={selectedCategory}
+            onChange={(event) => setSelectedCategory(event.target.value)}
           >
             <option value="all">All Categories</option>
-            <option value="electronics">Electronics</option>
-            <option value="keys-wallets">Keys &amp; Wallets</option>
-            <option value="books-study">Books &amp; Study</option>
-            <option value="clothing">Clothing</option>
+            <option value="Electronics">Electronics</option>
+            <option value="Keys & Wallets">Keys &amp; Wallets</option>
+            <option value="Books & Study">Books &amp; Study</option>
+            <option value="Clothing">Clothing</option>
+            <option value="Other">Other</option>
           </select>
 
           <input
@@ -172,7 +176,7 @@ function App() {
             className={statusFilter === 'all' ? 'tab active' : 'tab'}
             onClick={() => handleStatusFilterChange('all')}
           >
-            All Items <span>{items.length}</span>
+            All Items <span>{visibleItems.length}</span>
           </button>
 
           <button
@@ -191,9 +195,6 @@ function App() {
             Completed
           </button>
 
-          <button className="advanced-filter" type="button" disabled>
-            Advanced Filters
-          </button>
         </div>
 
         {error ? <p className="state-message state-message--error">{error}</p> : null}
@@ -202,17 +203,17 @@ function App() {
           <p className="state-message">Fetching the latest lost and found items...</p>
         ) : null}
 
-        {!error && !loading && items.length === 0 ? (
+        {!error && !loading && visibleItems.length === 0 ? (
           <p className="state-message">No items found.</p>
         ) : null}
 
         <div className="item-grid stitch-grid">
-          {items.map((item) => (
+          {visibleItems.map((item) => (
             <ItemCard key={item.id} item={item} />
           ))}
         </div>
 
-        {!loading && items.length > 0 ? (
+        {!loading && visibleItems.length > 0 ? (
           <div className="pagination" aria-label="Pagination">
             <button type="button" disabled>
               {'<'}

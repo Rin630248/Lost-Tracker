@@ -183,6 +183,29 @@ class AdminItemStatusUpdateTests(TestCase):
 
         self.assertEqual(response.status_code, 403)
         self.assertEqual(self.item.status, Item.STATUS_PENDING)
+
+    def test_admin_delete_removes_item_from_database_and_public_list(self):
+        response = self.client.delete(
+            reverse('items:admin-item-update', args=[self.item.pk]),
+        )
+
+        self.assertEqual(response.status_code, 204)
+        self.assertFalse(Item.objects.filter(pk=self.item.pk).exists())
+
+        public_response = self.client.get(reverse('items:item-list'))
+        self.assertEqual(public_response.status_code, 200)
+        self.assertEqual(public_response.json(), [])
+
+    def test_unauthenticated_admin_delete_is_forbidden(self):
+        self.client.logout()
+
+        response = self.client.delete(
+            reverse('items:admin-item-update', args=[self.item.pk]),
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertTrue(Item.objects.filter(pk=self.item.pk).exists())
+
     def test_admin_patch_can_save_claim_details(self):
         response = self.client.patch(
             reverse('items:admin-item-update', args=[self.item.pk]),

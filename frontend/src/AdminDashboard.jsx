@@ -153,8 +153,11 @@ function AdminDashboard() {
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
   const [submitSuccess, setSubmitSuccess] = useState('')
+  const [editingItemId, setEditingItemId] = useState(null)
   const [statusUpdatingItemId, setStatusUpdatingItemId] = useState(null)
+  const [deletingItemId, setDeletingItemId] = useState(null)
   const [statusUpdateError, setStatusUpdateError] = useState('')
+  const [deleteError, setDeleteError] = useState('')
   const [formState, setFormState] = useState({
     name: '',
     category: '',
@@ -164,7 +167,7 @@ function AdminDashboard() {
   })
   const [imageFile, setImageFile] = useState(null)
 
-  async function loadItems({ signal, preserveLoading = false } = {}) {
+  async function loadItems({ signal, preserveLoading = false, preserveItemsOnError = false } = {}) {
     if (!preserveLoading) {
       setLoading(true)
       setError('')
@@ -187,7 +190,9 @@ function AdminDashboard() {
         return
       }
 
-      setItems([])
+      if (!preserveItemsOnError) {
+        setItems([])
+      }
       setError('Unable to load the admin inventory right now.')
     } finally {
       if (!signal?.aborted) {
@@ -223,8 +228,38 @@ function AdminDashboard() {
     }))
   }
 
+  function handleEdit(item) {
+    setEditingItemId(item.id)
+    setFormState({
+      name: item.name || '',
+      category: item.category || '',
+      description: item.description || '',
+      location: item.location || '',
+      date_found: typeof item.date_found === 'string' ? item.date_found.slice(0, 10) : '',
+    })
+    setImageFile(null)
+    setSubmitError('')
+    setSubmitSuccess('')
+    document.getElementById('register-item-form')?.scrollIntoView({ behavior: 'smooth' })
+  }
+
+  function handleCancelEdit() {
+    setEditingItemId(null)
+    setFormState({
+      name: '',
+      category: '',
+      description: '',
+      location: '',
+      date_found: '',
+    })
+    setImageFile(null)
+    setSubmitError('')
+    setSubmitSuccess('')
+  }
+
   async function handleSubmit(event) {
     event.preventDefault()
+    const isEditing = editingItemId !== null
     setSubmitting(true)
     setSubmitError('')
     setSubmitSuccess('')
@@ -240,38 +275,53 @@ function AdminDashboard() {
     }
 
     try {
-      const response = await fetch(ADMIN_ITEMS_ENDPOINT, {
-        method: 'POST',
-        body: requestBody,
-        credentials: 'same-origin',
-        headers: getCsrfHeaders(),
-      })
+      const response = await fetch(
+        isEditing ? `${ADMIN_ITEMS_ENDPOINT}${editingItemId}/` : ADMIN_ITEMS_ENDPOINT,
+        {
+          method: isEditing ? 'PATCH' : 'POST',
+          body: requestBody,
+          credentials: 'same-origin',
+          headers: getCsrfHeaders(),
+        }
+      )
 
       if (response.status === 403) {
-  throw new Error(AUTH_REQUIRED_MESSAGE)
-}
+        throw new Error(AUTH_REQUIRED_MESSAGE)
+      }
 
-if (!response.ok) {
-  throw new Error(await getApiErrorMessage(response, 'Unable to register the item right now.'))
-}
+      if (!response.ok) {
+        throw new Error(
+          await getApiErrorMessage(
+            response,
+            isEditing ? 'Unable to save the item changes.' : 'Unable to register the item right now.'
+          )
+        )
+      }
 
-const createdItem = await response.json()
+      const savedItem = await response.json()
 
-setFormState({
-  name: '',
-  category: '',
-  description: '',
-  location: '',
-  date_found: '',
-})
-setImageFile(null)
-setSubmitSuccess('Item registered successfully.')
-setItems((currentItems) => mergeItemIntoList(currentItems, createdItem))
-notifyItemsChanged()
+      setFormState({
+        name: '',
+        category: '',
+        description: '',
+        location: '',
+        date_found: '',
+      })
+      setImageFile(null)
+      setEditingItemId(null)
+      setSubmitSuccess(isEditing ? 'Item changes saved successfully.' : 'Item registered successfully.')
+      setItems((currentItems) => mergeItemIntoList(currentItems, savedItem))
+      if (isEditing) {
+        await loadItems({ preserveLoading: true, preserveItemsOnError: true })
+      }
+      notifyItemsChanged()
 } catch (requestError) {
-setSubmitError(requestError.message || 'Unable to register the item right now.')
+      setSubmitError(
+        requestError.message ||
+          (isEditing ? 'Unable to save the item changes.' : 'Unable to register the item right now.')
+      )
 } finally {
-setSubmitting(false)
+      setSubmitting(false)
 }
 }
 
@@ -340,6 +390,45 @@ const nextStatus = item.status === 'completed' ? 'pending' : 'completed'
     }
   }
 
+  async function handleDelete(item) {
+    const itemLabel = item.name || `item #${item.item_number ?? item.id}`
+    if (!window.confirm(`Are you sure you want to delete ${itemLabel}? This cannot be undone.`)) {
+      return
+    }
+
+    setDeletingItemId(item.id)
+    setDeleteError('')
+    setSubmitSuccess('')
+
+    try {
+      const response = await fetch(`${ADMIN_ITEMS_ENDPOINT}${item.id}/`, {
+        method: 'DELETE',
+        credentials: 'same-origin',
+        headers: getCsrfHeaders(),
+      })
+
+      if (response.status === 403) {
+        throw new Error(AUTH_REQUIRED_MESSAGE)
+      }
+
+      if (!response.ok) {
+        throw new Error(await getApiErrorMessage(response, 'Unable to delete the item.'))
+      }
+
+      setItems((currentItems) => currentItems.filter((currentItem) => currentItem.id !== item.id))
+      if (editingItemId === item.id) {
+        handleCancelEdit()
+      }
+      setSubmitSuccess('Item deleted successfully.')
+      await loadItems({ preserveLoading: true, preserveItemsOnError: true })
+      notifyItemsChanged()
+    } catch (requestError) {
+      setDeleteError(requestError.message || 'Unable to delete the item.')
+    } finally {
+      setDeletingItemId(null)
+    }
+  }
+
   return (
     <main className="admin-layout">
       <aside className="admin-sidebar light-sidebar">
@@ -402,7 +491,7 @@ const nextStatus = item.status === 'completed' ? 'pending' : 'completed'
         <section className="admin-two-column">
           <div className="admin-left-column">
             <section className="admin-section stitch-form-panel" id="register-item-form">
-              <h2>Register New Item</h2>
+              <h2>{editingItemId !== null ? 'Edit Item' : 'Register New Item'}</h2>
 
               {submitError ? <p className="state-message state-message--error">{submitError}</p> : null}
 {submitSuccess ? <p className="state-message">{submitSuccess}</p> : null}
@@ -456,6 +545,7 @@ const nextStatus = item.status === 'completed' ? 'pending' : 'completed'
                 <label>
                   Image Upload
                   <input
+                    key={editingItemId ?? 'new-item'}
                     type="file"
                     accept="image/*"
                     onChange={(event) => setImageFile(event.target.files?.[0] ?? null)}
@@ -473,9 +563,22 @@ const nextStatus = item.status === 'completed' ? 'pending' : 'completed'
                   />
                 </label>
 
-                <button type="submit" disabled={submitting}>
-                  {submitting ? 'Registering...' : 'Register Item'}
-                </button>
+                <div className="admin-form-actions">
+                  <button type="submit" disabled={submitting}>
+                    {submitting
+                      ? editingItemId !== null
+                        ? 'Saving Changes...'
+                        : 'Registering...'
+                      : editingItemId !== null
+                        ? 'Save Changes'
+                        : 'Register Item'}
+                  </button>
+                  {editingItemId !== null ? (
+                    <button type="button" className="admin-cancel-edit-button" onClick={handleCancelEdit}>
+                      Cancel Edit
+                    </button>
+                  ) : null}
+                </div>
               </form>
             </section>
 
@@ -491,6 +594,7 @@ const nextStatus = item.status === 'completed' ? 'pending' : 'completed'
           <section className="admin-section admin-right-column" id="inventory-table">
             {error ? <p className="state-message state-message--error">{error}</p> : null}
             {statusUpdateError ? <p className="state-message state-message--error">{statusUpdateError}</p> : null}
+            {deleteError ? <p className="state-message state-message--error">{deleteError}</p> : null}
 
             <div className="table-toolbar">
               <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
@@ -577,18 +681,36 @@ const nextStatus = item.status === 'completed' ? 'pending' : 'completed'
                             <td>{item.location || 'Location not provided'}</td>
                             <td>{formatDate(item.date_found)}</td>
                             <td>
-                              <button
-                                type="button"
-                                className="admin-action-button"
-                                disabled={statusUpdatingItemId === item.id}
-                                onClick={() => handleStatusToggle(item)}
-                              >
-                                {statusUpdatingItemId === item.id
-                                  ? 'Updating...'
-                                  : isCompleted
-                                    ? 'Mark Pending'
-                                    : 'Mark Completed'}
-                              </button>
+                              <div className="admin-item-actions">
+                                <button
+                                  type="button"
+                                  className="admin-action-button admin-edit-button"
+                                  disabled={submitting || statusUpdatingItemId === item.id}
+                                  onClick={() => handleEdit(item)}
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  type="button"
+                                  className="admin-action-button"
+                                  disabled={statusUpdatingItemId === item.id || deletingItemId === item.id}
+                                  onClick={() => handleStatusToggle(item)}
+                                >
+                                  {statusUpdatingItemId === item.id
+                                    ? 'Updating...'
+                                    : isCompleted
+                                      ? 'Mark Pending'
+                                      : 'Mark Completed'}
+                                </button>
+                                <button
+                                  type="button"
+                                  className="admin-action-button admin-delete-button"
+                                  disabled={deletingItemId === item.id || statusUpdatingItemId === item.id}
+                                  onClick={() => handleDelete(item)}
+                                >
+                                  {deletingItemId === item.id ? 'Deleting...' : 'Delete'}
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         )
