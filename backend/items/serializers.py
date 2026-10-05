@@ -2,6 +2,31 @@ from rest_framework import serializers
 from .models import Item
 
 
+class PublicItemSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the public student page.
+    Private claim information is not exposed.
+    """
+
+    item_number = serializers.IntegerField(source='id', read_only=True)
+
+    class Meta:
+        model = Item
+        fields = [
+            'id',
+            'item_number',
+            'name',
+            'category',
+            'description',
+            'location',
+            'date_found',
+            'image',
+            'status',
+            'created_at',
+            'updated_at',
+        ]
+
+
 class ItemSerializer(serializers.ModelSerializer):
     """
     Serializer for the Item model.
@@ -28,7 +53,13 @@ class ItemSerializer(serializers.ModelSerializer):
             'created_at',
             'updated_at',
         ]
-        read_only_fields = ['id', 'item_number', 'created_at', 'updated_at']
+
+        read_only_fields = [
+            'id',
+            'item_number',
+            'created_at',
+            'updated_at',
+        ]
 
     def validate_date_found(self, value):
         """
@@ -37,5 +68,8 @@ class ItemSerializer(serializers.ModelSerializer):
         from django.utils import timezone
 
         if value > timezone.now().date():
-            raise serializers.ValidationError("Date found cannot be in the future.")
+            raise serializers.ValidationError(
+                "Date found cannot be in the future."
+            )
+
         return value

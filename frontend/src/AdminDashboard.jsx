@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { notifyItemsChanged } from './itemSync'
 
+
 const PUBLIC_ITEMS_ENDPOINT = '/api/items/'
 const ADMIN_ITEMS_ENDPOINT = '/api/admin/items/'
 const DJANGO_ADMIN_LOGIN_PATH = '/django-admin/login/?next=/django-admin/'
@@ -174,10 +175,11 @@ function AdminDashboard() {
     }
 
     try {
-      const response = await fetch(PUBLIC_ITEMS_ENDPOINT, {
-        signal,
-        cache: 'no-store',
-      })
+     const response = await fetch(ADMIN_ITEMS_ENDPOINT, {
+  signal,
+  cache: 'no-store',
+  credentials: 'same-origin',
+})
 
       if (!response.ok) {
         throw new Error(`Request failed with status ${response.status}`)
@@ -616,21 +618,22 @@ const nextStatus = item.status === 'completed' ? 'pending' : 'completed'
 
             <div className="table-wrapper">
               <table className="admin-table">
-                <thead>
-                  <tr>
-                    <th>Status</th>
-                    <th>Thumbnail</th>
-                    <th>Name &amp; Category</th>
-                    <th>Location</th>
-                    <th>Date</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
+              <thead>
+  <tr>
+    <th>Status</th>
+    <th>Thumbnail</th>
+    <th>Name &amp; Category</th>
+    <th>Location</th>
+    <th>Date</th>
+    <th>Claim Details</th>
+    <th>Actions</th>
+  </tr>
+</thead>
 
                 <tbody>
                   {loading ? (
                     <tr>
-                      <td colSpan="6" className="empty-table">
+                      <td colSpan="7" className="empty-table">
                         Loading items...
                       </td>
                     </tr>
@@ -638,7 +641,7 @@ const nextStatus = item.status === 'completed' ? 'pending' : 'completed'
 
                   {!loading && filteredItems.length === 0 ? (
                     <tr>
-                      <td colSpan="6" className="empty-table">
+                      <td colSpan="7" className="empty-table">
                         No items found.
                       </td>
                     </tr>
@@ -679,9 +682,23 @@ const nextStatus = item.status === 'completed' ? 'pending' : 'completed'
                               </div>
                             </td>
                             <td>{item.location || 'Location not provided'}</td>
-                            <td>{formatDate(item.date_found)}</td>
-                            <td>
-                              <div className="admin-item-actions">
+
+<td>{formatDate(item.date_found)}</td>
+
+<td>
+  {isCompleted ? (
+    <div>
+      <div><strong>UNID:</strong> {item.unid || '-'}</div>
+      <div><strong>Claimed Date:</strong> {formatDate(item.claimed_date)}</div>
+      <div><strong>Admin Note:</strong> {item.admin_note || '-'}</div>
+    </div>
+  ) : (
+    <span>-</span>
+  )}
+</td>
+
+<td>
+  <div className="admin-item-actions">
                                 <button
                                   type="button"
                                   className="admin-action-button admin-edit-button"
